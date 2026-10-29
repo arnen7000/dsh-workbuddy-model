@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 最小权限：本工作流只需读仓库内容。
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate package.json
+        run: node -e "const p=require('./package.json');if(!p.name||!p.version)process.exit(1);console.log(p.name,p.version)"
+
+      - name: Validate cordis.patch.yml is present & referenced
+        run: |
+          test -f cordis.patch.yml
+          node -e "const p=require('./package.json');if(p.dsh.bundle.patch!=='./cordis.patch.yml')process.exit(1)"
+
+      - name: Syntax check all lib bundles
+        run: for f in lib/*.js; do node --check "$f"; done
+
+      - name: Contract suite
+        # 纯离线：请求体形状、身份规则、平台路径、清单一致性。
+        run: node tools/run-tests.mjs
+
+      - name: Scenario suite
+        # 纯离线：上游报错、凭据坏掉、目录畸形、路由被绕过、体系自检。
+        # 全部靠构造输入与打桩 fetch，不需要凭据也不需要网络。
+        run: node tools/scenarios.mjs "$PWD"
+
+      - name: 本机信息 / 凭据扫描
+        # 防止把用户目录、盘符路径、token 之类的东西带进公开仓库。
+        run: node tools/check-repo-hygiene.mjs
+
+      - name: npm pack (dry run)
+        run: npm pack --dry-run
