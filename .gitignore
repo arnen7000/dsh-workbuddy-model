@@ -8,3 +8,6 @@ AGENTS.md
 
 .local/
 temp/
+
+# 依赖锁文件：本仓库发布预构建产物 lib/，CI 用 npm install，锁文件对使用者无意义
+pnpm-lock.yaml
