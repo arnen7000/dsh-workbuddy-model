@@ -73,20 +73,21 @@ but pnpm blocks unauthorised scripts by default: add both to `allowBuilds` in th
 `pnpm-workspace.yaml`, or installation fails with `ERR_PNPM_IGNORED_BUILDS`. The plugin page offers
 **allow these scripts and retry** for exactly this error.
 
-## Version compatibility
+## Scope
 
-**Verified** (only environments actually tested):
+**Verified** — only the environments below have run a real conversation:
 
 | Component | Version |
 |---|---|
-| DSH desktop core | `0.2.1-rc.3` |
+| DSH core | `0.2.1-rc.3` |
 | WorkBuddy (CN) | `5.9.3` |
 | WorkBuddy AI (international) | `5.8.4` |
+| OS | Windows x64 |
 
-Peers are declared as `>=0.2.1-rc.1` (**no upper bound**), so a DSH core or WorkBuddy app upgrade
-**still installs** — the host will not refuse to load the plugin. Only the environments above were
-measured; other versions install but are **not guaranteed to be stable**. Cores at `0.2.0` or older are
-rejected (the plugin relies on SettingsForms, which only exists from `0.2.1`).
+**No version range is declared for the DSH core**: `package.json` carries no `@deepseek-ai/dsh-*`
+`peerDependencies`, so every core version can install the plugin and the host will never refuse it as
+"incompatible". Anything outside the table **installs but is not guaranteed to work** — cores at `0.2.0`
+or older lack SettingsForms, which the plugin depends on.
 
 The same applies to the WorkBuddy app: the plugin reuses its sign-in and version, so upstream changes
 in validation can break it.
@@ -99,35 +100,13 @@ in validation can break it.
 | macOS | **untested** (code paths complete) | `~/Library/Application Support/CodeBuddyExtension/...`; version read from `WorkBuddy.app`'s `Info.plist` and the bundled CLI |
 | Linux | **untested** (code paths complete) | both `$XDG_CONFIG_HOME` and `$XDG_DATA_HOME`; WSL additionally probes the mounted Windows profile |
 
-The macOS / Linux path logic is covered by **platform-simulated unit tests** (`test/platform.test.mjs`, asserting
-which locations each platform probes and that unknown platforms return an empty list rather than guessing), but
-**has never run on real hardware**. What can still bite you there:
+macOS / Linux follow each platform's own conventions, but **have never run on real hardware**.
+What can still bite you there:
 
 - decrypting the credential needs an Electron binary; if auto-discovery fails, point `WORKBUDDY_ELECTRON_BIN`
   (`WORKBUDDY_AI_ELECTRON_BIN` for the international app) straight at the app executable
 - whether the WorkBuddy desktop app even exists on macOS / Linux and writes the same auth file is unverified
-- path separators: the simulated tests only verify structure; real separators need a run on the real platform
-
-## Testing
-
-```bash
-node tools/run-tests.mjs                      # offline contract tests (60 assertions, no network or credential)
-node tools/check-installed.mjs                # source vs installed copy
-node tools/mutate-tests.cjs                   # mutation tests: prove the assertions can fail
-WORKBUDDY_SMOKE=1 node tools/smoke-live.mjs   # live smoke test (real upstream, needs a signed-in app)
-```
-
-Four layers, each with one job:
-
-| Layer | Covers | When |
-|---|---|---|
-| Contract tests | request body shape, UA header safety, error classification, route literals, manifest consistency, platform paths | every change |
-| Install check | source vs installed copy (`file:` installs are **copies**; a missed sync silently runs stale code) | before anything takes effect |
-| Mutation tests | whether assertions can actually fail (all 4 deliberately broken branches must be caught) | when touching tests or guards |
-| Live smoke | whether the upstream rules still hold — the CN `400/11128` rule is only observable against the real endpoint | before a release, after an app upgrade |
-
-**Not covered**: loading inside the DSH host, the settings panel UI, and SSE relay to the browser.
-Those still need one manual run inside the app.
+- path separators and case sensitivity differ; only a run on the real platform settles it
 
 ## Known limitations
 

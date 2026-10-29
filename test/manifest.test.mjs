@@ -86,11 +86,12 @@ test("实现只来自 lib/（本仓库发预构建产物，没有可重建的源
   assert.equal(pkg.scripts.build, undefined, "没有源码树就不该提供 build 脚本");
 });
 
-test("内核 peer 不得精确钉死某一代（原失效根因）", () => {
-  for (const [name, range] of Object.entries(pkg.peerDependencies)) {
-    if (!name.startsWith("@deepseek-ai/dsh-")) continue;
-    assert.match(range, /^[>^~]/u, `${name} 的区间 ${range} 是精确钉住，内核一升级插件就会被拒绝加载`);
-  }
+test("不得对 DSH 内核声明 peer 区间（任何区间都会挡住某些版本）", () => {
+  // semver 里 prerelease 之间 alpha < beta < rc，所以哪怕写 >=0.2.1-rc.1，
+  // 0.2.1-alpha.2 也会被判为不兼容，安装被直接拒绝。宿主本来就提供这些包，
+  // 声明区间只会变成一道安装闸门 —— 兼容范围写进 README，不写进清单。
+  const kernel = Object.keys(pkg.peerDependencies).filter((name) => name.startsWith("@deepseek-ai/dsh-"));
+  assert.deepEqual(kernel, [], `不要声明 DSH 内核 peer：${kernel.join(", ")}`);
 });
 
 test("pi-ai 必须是 dependencies 而不是 peer（第二层根因）", () => {

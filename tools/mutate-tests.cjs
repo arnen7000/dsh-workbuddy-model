@@ -26,11 +26,12 @@ const MUTATIONS = [
     to: '"/plugins/dsh-workbuddy-model/stats"',
   },
   {
-    name: "把内核 peer 改回精确钉住",
+    // 加回内核 peer = 给安装加一道版本闸门，某些内核会被直接拒装。
+    name: "给 DSH 内核加回 peer 区间",
     suite: "run-tests",
     file: "package.json",
-    from: '"@deepseek-ai/dsh-llm": ">=0.2.1-rc.1"',
-    to: '"@deepseek-ai/dsh-llm": "0.2.1-rc.3"',
+    from: '"@deepseek-ai/cordis": "^4.0.5",\n    "@deepseek-ai/schemastery"',
+    to: '"@deepseek-ai/cordis": "^4.0.5",\n    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.1",\n    "@deepseek-ai/schemastery"',
   },
   {
     name: "国际版不再补 system",
