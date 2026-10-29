@@ -69,9 +69,17 @@ Editing files by hand is only a fallback for a broken profile: quit the app, dro
 | OS | see "Platform support" below | only Windows verified on real hardware |
 
 `@google/genai` and `protobufjs` ship install scripts (a no-op and a version-consistency check — neither compiles),
-but pnpm blocks unauthorised scripts by default: add both to `allowBuilds` in the desktop profile's
-`pnpm-workspace.yaml`, or installation fails with `ERR_PNPM_IGNORED_BUILDS`. The plugin page offers
-**allow these scripts and retry** for exactly this error.
+but pnpm blocks unauthorised scripts by default, so the first install ends with `ERR_PNPM_IGNORED_BUILDS`:
+
+- **Desktop plugin page**: click **allow these scripts and retry**
+- **Command line**: the CLI writes placeholder entries into the profile's `pnpm-workspace.yaml`; change
+  `set this to true or false` to `true` and re-run the same `add` command:
+
+  ```yaml
+  allowBuilds:
+    '@google/genai': true
+    protobufjs: true
+  ```
 
 ## Scope
 

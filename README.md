@@ -71,8 +71,17 @@ dsh plugin --profile web remove dsh-workbuddy-model
 | 操作系统 | 见下节「平台支持」 | 仅 Windows 真机实测 |
 
 `@google/genai` 与 `protobufjs` 带安装脚本（前者是空操作，后者只做版本一致性检查，都不编译），
-但 pnpm 默认会拦下未授权的脚本——桌面版 profile 的 `pnpm-workspace.yaml` 要把这两个加进 `allowBuilds`，
-否则安装会直接失败（`ERR_PNPM_IGNORED_BUILDS`）。插件页遇到这个报错时，点**允许这些脚本并重试**即可。
+但 pnpm 默认会拦下未授权的脚本，第一次安装会以 `ERR_PNPM_IGNORED_BUILDS` 结束：
+
+- **桌面版插件页**：直接点**允许这些脚本并重试**
+- **命令行**：CLI 会在 profile 的 `pnpm-workspace.yaml` 里写好占位项，把 `set this to true or false`
+  改成 `true`，再重跑同一条 `add` 命令：
+
+  ```yaml
+  allowBuilds:
+    '@google/genai': true
+    protobufjs: true
+  ```
 
 ## 适用范围
 
