@@ -99,6 +99,28 @@ test("pi-ai 必须是 dependencies 而不是 peer（第二层根因）", () => {
   assert.equal("dependencies" in pkg && pkg.peerDependencies["@earendil-works/pi-ai"], undefined);
 });
 
+test("宿主包的下限必须写成 >=，不能写 ^（^ 会把实测可用的旧版判成「环境太老」）", () => {
+  // 实测矩阵：cordis 4.0.4 / schemastery 3.18.4 都能跑（DSH 0.1.7-rc.1），
+  // 而 ^4.0.5 / ^3.18.5 的下限高于它们 —— dshmarket 的 compatibility.js 会据此
+  // 判 belowMin（「环境太老」），把本来能用的内核劝退。下限只写真正需要的那一版。
+  for (const [name, floor] of [["@deepseek-ai/cordis", "4.0.4"], ["@deepseek-ai/schemastery", "3.18.4"]]) {
+    const range = pkg.peerDependencies[name];
+    assert.equal(range, `>=${floor}`, `${name} 的下限应为 >=${floor}，实际 ${range}`);
+  }
+});
+
+test("加载前必须预检 schemastery.volatile()，否则老内核只报一句看不懂的 TypeError", () => {
+  // 0.1.5-rc.2 的 schemastery 是 3.18.2，缺 .volatile()：裸跑会抛
+  // `z.boolean(...).default(...).volatile is not a function`，用户看不出是内核太老。
+  // 预检把这句话换成「DSH 0.1.7 起才支持」，所以它必须真的在 bundle 里。
+  const bundle = read("lib/index.js");
+  assert.ok(bundle.includes("schemasteryHasVolatile"), "lib/index.js 缺少 schemastery 预检");
+  assert.match(bundle, /this DSH core is too old/u, "预检必须给出可读的失败原因");
+  const guardAt = bundle.indexOf("schemasteryHasVolatile(z)");
+  const firstSchemaAt = bundle.indexOf("MAXIMUM_CONTEXT_WINDOW_FIELD = ");
+  assert.ok(guardAt !== -1 && firstSchemaAt !== -1 && guardAt < firstSchemaAt, "预检必须在第一个 schema 定义之前执行");
+});
+
 test("engines.node 有声明，避免装到不支持的运行时", () => {
   assert.equal(typeof pkg.engines?.node, "string");
 });

@@ -83,19 +83,23 @@ but pnpm blocks unauthorised scripts by default, so the first install ends with 
 
 ## Scope
 
-**Verified** — only the environments below have run a real conversation:
+**Minimum: DSH core `0.1.7`** (which ships `@deepseek-ai/schemastery` `3.18.4`).
+Older cores are **not supported**: `0.1.5-rc.2` fails at load time because its `schemastery` has no
+`.volatile()`. From `0.1.2` the plugin says so directly (`this DSH core is too old …`) instead of dying
+with `z.boolean(...).default(...).volatile is not a function`.
+
+**Verified** — the environments below have run a real conversation:
 
 | Component | Version |
 |---|---|
-| DSH core | `0.2.1-rc.3` |
+| DSH core | `0.2.1-rc.3` (desktop), `0.2.1-alpha.2`, `0.2.2-alpha.2`, `0.1.7-rc.1` |
 | WorkBuddy (CN) | `5.9.3` |
 | WorkBuddy AI (international) | `5.8.4` |
 | OS | Windows x64 |
 
 **No version range is declared for the DSH core**: `package.json` carries no `@deepseek-ai/dsh-*`
 `peerDependencies`, so every core version can install the plugin and the host will never refuse it as
-"incompatible". Anything outside the table **installs but is not guaranteed to work** — cores at `0.2.0`
-or older lack SettingsForms, which the plugin depends on.
+"incompatible". Anything outside the table but at `0.1.7` or newer **installs but is not guaranteed to work**.
 
 The same applies to the WorkBuddy app: the plugin reuses its sign-in and version, so upstream changes
 in validation can break it.

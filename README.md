@@ -85,18 +85,23 @@ dsh plugin --profile web remove dsh-workbuddy-model
 
 ## 适用范围
 
-**已实测**——只有下面这些环境跑过真实对话：
+**最低要求：DSH 内核 `0.1.7`**（其 `@deepseek-ai/schemastery` 为 `3.18.4`）。
+更老的内核**不支持**：`0.1.5-rc.2` 实测会在加载阶段失败，因为它带的 `schemastery` 没有 `.volatile()`。
+`0.1.2` 起会直接报出原因（`this DSH core is too old …`），不再是那句看不出所以然的
+`z.boolean(...).default(...).volatile is not a function`。
+
+**已实测**——下面这些环境跑过真实对话：
 
 | 组件 | 版本 |
 |---|---|
-| DSH 内核 | `0.2.1-rc.3` |
+| DSH 内核 | `0.2.1-rc.3`（桌面版）、`0.2.1-alpha.2`、`0.2.2-alpha.2`、`0.1.7-rc.1` |
 | WorkBuddy（国内版） | `5.9.3` |
 | WorkBuddy AI（国际版） | `5.8.4` |
 | 操作系统 | Windows x64 |
 
 **不对 DSH 内核声明版本区间**：`package.json` 里没有 `@deepseek-ai/dsh-*` 的 `peerDependencies`，
-所以任何内核版本都能装上，不会被宿主以「不兼容」为由拒绝。上表之外的环境**可以装，但不保证好用**——
-`0.2.0` 及更早的内核缺少插件依赖的 SettingsForms，装上也可能报错。
+所以任何内核版本都能装上，不会被宿主以「不兼容」为由拒绝。上表之外、但 `0.1.7` 以上的环境
+**可以装，但不保证好用**。
 
 App 升级同理：插件复用 App 的登录状态与版本号，App 变了、上游改了校验规则，就可能失效。
 

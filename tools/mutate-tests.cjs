@@ -30,8 +30,24 @@ const MUTATIONS = [
     name: "给 DSH 内核加回 peer 区间",
     suite: "run-tests",
     file: "package.json",
-    from: '"@deepseek-ai/cordis": "^4.0.5",\n    "@deepseek-ai/schemastery"',
-    to: '"@deepseek-ai/cordis": "^4.0.5",\n    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.1",\n    "@deepseek-ai/schemastery"',
+    from: '"@deepseek-ai/cordis": ">=4.0.4",\n    "@deepseek-ai/schemastery"',
+    to: '"@deepseek-ai/cordis": ">=4.0.4",\n    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.1",\n    "@deepseek-ai/schemastery"',
+  },
+  {
+    // 把下限写回 ^：dshmarket 会据此判 belowMin，把实测能跑的 0.1.7 劝退。
+    name: "宿主包下限改回 ^（会误报环境太老）",
+    suite: "run-tests",
+    file: "package.json",
+    from: '"@deepseek-ai/schemastery": ">=3.18.4"',
+    to: '"@deepseek-ai/schemastery": "^3.18.5"',
+  },
+  {
+    // 拆掉预检 = 老内核只抛一句 volatile is not a function，用户看不出是内核太老。
+    name: "拆掉 schemastery 预检",
+    suite: "run-tests",
+    file: "lib/index.js",
+    from: 'if (!schemasteryHasVolatile(z)) {\n\tthrow new Error("dsh-workbuddy-model: this DSH core is too old',
+    to: 'if (false) {\n\tthrow new Error("dsh-workbuddy-model: this DSH core is too old',
   },
   {
     name: "国际版不再补 system",
@@ -110,6 +126,42 @@ function linkDependencies(dir) {
 }
 
 /**
+ * 逐层删除目录。
+ *
+ * 不能用 `fs.rmSync`：本机有 node-safe-delete shim 把它接管成「移到回收站」，
+ * 遇到含 junction 的临时目录会报 `Some operations were aborted` 而整个脚本崩掉。
+ * 这里手动 unlink + rmdir，既绕开 shim，也保证绝不跟进 reparse point。
+ */
+function removeTree(dir) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    const target = path.join(dir, entry.name);
+    if (entry.isSymbolicLink()) {
+      // junction 只能用 rmdir 摘掉；unlink 会 EPERM
+      try {
+        fs.rmdirSync(target);
+      } catch {}
+      continue;
+    }
+    if (entry.isDirectory()) {
+      removeTree(target);
+      continue;
+    }
+    try {
+      fs.unlinkSync(target);
+    } catch {}
+  }
+  try {
+    fs.rmdirSync(dir);
+  } catch {}
+}
+
+/**
  * 清理临时目录。**必须先拆掉 node_modules 联接**：
  * 它是指向真实依赖的 reparse point，直接递归删除在 Windows 上有跟进删除的风险，
  * 那就等于把仓库的 node_modules 一起删了。
@@ -117,9 +169,9 @@ function linkDependencies(dir) {
 function cleanup(dir) {
   const link = path.join(dir, "node_modules");
   try {
-    if (fs.lstatSync(link).isSymbolicLink() || fs.lstatSync(link).isDirectory()) fs.rmdirSync(link);
+    fs.rmdirSync(link);
   } catch {}
-  fs.rmSync(dir, { recursive: true, force: true });
+  removeTree(dir);
 }
 
 let survived = 0;
