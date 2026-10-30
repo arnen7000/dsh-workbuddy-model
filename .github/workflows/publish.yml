@@ -52,6 +52,10 @@ jobs:
           echo "版本一致：$PKG"
 
       # 发布前跑两层套件，任一失败即不发布。
+      # 套件会 import lib/ 里的宿主 bundle，需要先装依赖（只用于解析模块）。
+      - name: 安装依赖
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
       - name: 发布前跑契约与场景套件
         run: |
           node tools/run-tests.mjs

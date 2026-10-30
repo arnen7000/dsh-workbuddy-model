@@ -1,0 +1,59 @@
+name: publish-token
+
+# 应急发布通道：本机到 registry.npmjs.org 不通时（TLS 握手超时、直连与代理都不行），
+# 借 GitHub 的运行环境把同一个 tarball 发出去。
+#
+# 常规发版仍然走 publish.yml 的 OIDC 通道（无需任何长期凭据）。
+# 这里只做「本机发不出去」时的兜底，因此要求手工输入版本号确认，避免误触发。
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "输入 package.json 里的版本号，确认要发布它"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-token
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: 版本确认
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -eu
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$CONFIRM" != "$PKG" ]; then
+            echo "::error::输入的是 $CONFIRM，package.json 是 $PKG，拒绝发布。"
+            exit 1
+          fi
+          echo "确认发布 $PKG"
+
+      - name: 安装依赖
+        # 两个套件会 import lib/ 里的宿主 bundle，需要能解析 @deepseek-ai/dsh-* 与 pi-ai。
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: 发布前跑契约与场景套件
+        run: |
+          node tools/run-tests.mjs
+          node tools/scenarios.mjs "$PWD"
+          node tools/check-repo-hygiene.mjs
+
+      - name: 发布到 npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish
