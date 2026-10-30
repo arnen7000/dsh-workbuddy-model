@@ -97,9 +97,12 @@ with `z.boolean(...).default(...).volatile is not a function`.
 | WorkBuddy AI (international) | `5.8.4` |
 | OS | Windows x64 |
 
-**No version range is declared for the DSH core**: `package.json` carries no `@deepseek-ai/dsh-*`
-`peerDependencies`, so every core version can install the plugin and the host will never refuse it as
-"incompatible". Anything outside the table but at `0.1.7` or newer **installs but is not guaranteed to work**.
+**No version range is declared for any host package**: `peerDependencies` carries no `@deepseek-ai/*`
+entry — not the core, not `cordis`, not `schemastery`. The host provides all of them, and a declared
+range is only ever read as evidence that the environment is too old: hosts ship prereleases such as
+`0.2.1-alpha.2` and `3.18.5-alpha.1`, and a prerelease falls into no ordinary range, so every range
+misfires. Every core version therefore installs; anything outside the table but at `0.1.7` or newer
+**installs but is not guaranteed to work**.
 
 The same applies to the WorkBuddy app: the plugin reuses its sign-in and version, so upstream changes
 in validation can break it.

@@ -86,12 +86,16 @@ test("实现只来自 lib/（本仓库发预构建产物，没有可重建的源
   assert.equal(pkg.scripts.build, undefined, "没有源码树就不该提供 build 脚本");
 });
 
-test("不得对 DSH 内核声明 peer 区间（任何区间都会挡住某些版本）", () => {
-  // semver 里 prerelease 之间 alpha < beta < rc，所以哪怕写 >=0.2.1-rc.1，
-  // 0.2.1-alpha.2 也会被判为不兼容，安装被直接拒绝。宿主本来就提供这些包，
-  // 声明区间只会变成一道安装闸门 —— 兼容范围写进 README，不写进清单。
-  const kernel = Object.keys(pkg.peerDependencies).filter((name) => name.startsWith("@deepseek-ai/dsh-"));
-  assert.deepEqual(kernel, [], `不要声明 DSH 内核 peer：${kernel.join(", ")}`);
+test("不得对宿主提供的 @deepseek-ai/* 声明 peer（任何区间都会误判）", () => {
+  // 两条独立的事故，都指向同一结论：别声明。
+  //  1) 内核 peer：semver 里 alpha < beta < rc，哪怕写 >=0.2.1-rc.1，
+  //     0.2.1-alpha.2 也会被判不兼容，安装被直接拒绝。
+  //  2) cordis / schemastery：宿主装的是 prerelease（4.0.5-alpha.1、3.18.5-alpha.1），
+  //     而 semver 的预发布版不落进任何发布区间 —— 连 >=3.18.4 都判 false。
+  //     宿主据此判 belowMin（「环境太老」），把本来能跑的环境劝退。
+  // 这些包宿主一定提供，真正的版本要求由运行时预检负责（见下一条）。
+  const host = Object.keys(pkg.peerDependencies).filter((name) => name.startsWith("@deepseek-ai/"));
+  assert.deepEqual(host, [], `不要声明宿主包 peer：${host.join(", ")}`);
 });
 
 test("pi-ai 必须是 dependencies 而不是 peer（第二层根因）", () => {
@@ -99,14 +103,12 @@ test("pi-ai 必须是 dependencies 而不是 peer（第二层根因）", () => {
   assert.equal("dependencies" in pkg && pkg.peerDependencies["@earendil-works/pi-ai"], undefined);
 });
 
-test("宿主包的下限必须写成 >=，不能写 ^（^ 会把实测可用的旧版判成「环境太老」）", () => {
-  // 实测矩阵：cordis 4.0.4 / schemastery 3.18.4 都能跑（DSH 0.1.7-rc.1），
-  // 而 ^4.0.5 / ^3.18.5 的下限高于它们 —— dshmarket 的 compatibility.js 会据此
-  // 判 belowMin（「环境太老」），把本来能用的内核劝退。下限只写真正需要的那一版。
-  for (const [name, floor] of [["@deepseek-ai/cordis", "4.0.4"], ["@deepseek-ai/schemastery", "3.18.4"]]) {
-    const range = pkg.peerDependencies[name];
-    assert.equal(range, `>=${floor}`, `${name} 的下限应为 >=${floor}，实际 ${range}`);
-  }
+test("宿主包版本要求只能靠运行时预检表达，不能靠 peer 区间", () => {
+  // 上限不必管（^4.0.5 之类只会被当 warning），下限才是致命的：
+  // dshmarket 的 compatibility.js 会把「解析到的版本低于所有下限」判成
+  // belowMin，也就是「环境太老」，用户看到的是插件不能用。
+  assert.equal(pkg.peerDependencies["@deepseek-ai/schemastery"], undefined);
+  assert.equal(pkg.peerDependencies["@deepseek-ai/cordis"], undefined);
 });
 
 test("加载前必须预检 schemastery.volatile()，否则老内核只报一句看不懂的 TypeError", () => {

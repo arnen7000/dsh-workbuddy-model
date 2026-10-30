@@ -99,8 +99,10 @@ dsh plugin --profile web remove dsh-workbuddy-model
 | WorkBuddy AI（国际版） | `5.8.4` |
 | 操作系统 | Windows x64 |
 
-**不对 DSH 内核声明版本区间**：`package.json` 里没有 `@deepseek-ai/dsh-*` 的 `peerDependencies`，
-所以任何内核版本都能装上，不会被宿主以「不兼容」为由拒绝。上表之外、但 `0.1.7` 以上的环境
+**不对宿主包声明任何版本区间**：`package.json` 的 `peerDependencies` 里没有 `@deepseek-ai/*`
+（内核、cordis、schemastery 都不声明）。这些包由宿主自己提供，声明区间只会被宿主当成
+「环境太老」的依据——宿主装的是 `0.2.1-alpha.2`、`3.18.5-alpha.1` 这类预发布版，而预发布版
+不落进任何常规区间，写什么都会误判。所以任何版本都能装上；上表之外、但 `0.1.7` 以上的环境
 **可以装，但不保证好用**。
 
 App 升级同理：插件复用 App 的登录状态与版本号，App 变了、上游改了校验规则，就可能失效。

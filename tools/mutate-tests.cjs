@@ -30,16 +30,16 @@ const MUTATIONS = [
     name: "给 DSH 内核加回 peer 区间",
     suite: "run-tests",
     file: "package.json",
-    from: '"@deepseek-ai/cordis": ">=4.0.4",\n    "@deepseek-ai/schemastery"',
-    to: '"@deepseek-ai/cordis": ">=4.0.4",\n    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.1",\n    "@deepseek-ai/schemastery"',
+    from: '"peerDependencies": {\n    "react": "^18.2.0"',
+    to: '"peerDependencies": {\n    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.1",\n    "react": "^18.2.0"',
   },
   {
-    // 把下限写回 ^：dshmarket 会据此判 belowMin，把实测能跑的 0.1.7 劝退。
-    name: "宿主包下限改回 ^（会误报环境太老）",
+    // 加回宿主包 peer：宿主装的是 prerelease，任何区间都会被判「环境太老」。
+    name: "把 schemastery 加回 peer（会误报环境太老）",
     suite: "run-tests",
     file: "package.json",
-    from: '"@deepseek-ai/schemastery": ">=3.18.4"',
-    to: '"@deepseek-ai/schemastery": "^3.18.5"',
+    from: '"peerDependencies": {\n    "react": "^18.2.0"',
+    to: '"peerDependencies": {\n    "@deepseek-ai/schemastery": ">=3.18.4",\n    "react": "^18.2.0"',
   },
   {
     // 拆掉预检 = 老内核只抛一句 volatile is not a function，用户看不出是内核太老。
