@@ -15,6 +15,15 @@ dsh plugin --profile web add dsh-workbuddy-model
 
 **From the DSH plugin marketplace**: open the **Plugin Marketplace**, search `workbuddy-model`, click install.
 
+> **The first install may ask you to approve install scripts** — that is pnpm's default safety gate,
+> not a failed install. This plugin's dependency `@earendil-works/pi-ai` pulls in `@google/genai` and
+> `protobufjs`, and both declare an install script. pnpm does not run those by default, so it hands
+> the decision to you. Both scripts are no-ops or print one line of warning: `protobufjs` only checks
+> the version prefix its dependents declare (and writes a `WARN` to stderr if it looks off), and
+> `@google/genai`'s `preinstall` is a plain `echo`. **Neither writes files, uses the network, or
+> compiles anything.** Click **allow these scripts and retry**; the approval is stored in the current
+> profile and you will not be asked again.
+
 **From this repository** (pin a commit, or when a version is not on npm yet):
 
 ```bash
@@ -126,6 +135,7 @@ What can still bite you there:
 ## Known limitations
 
 - This works by posing as the official WorkBuddy client; the upstream runs channel checks and may break it again at any time
+- The first install asks pnpm to approve the install scripts of `@google/genai` / `protobufjs` (both no-ops or warning-only); approve once — see the **Install** section above
 - This repository ships the prebuilt `lib/` only — there is no source tree to rebuild, `lib/` is the single source of truth
 
 ## Provenance
