@@ -132,6 +132,8 @@ macOS / Linux 按各自平台的规范实现，但**没有在真机上跑过**�
 ## 已知限制
 
 - 本质是把 DSH 伪装成 WorkBuddy 官方客户端调用其接口，上游有渠道校验机制，随时可能再次失效
+- 注册的 provider id 是 `workbuddy` / `workbuddy-ai`，与 `dsh-workbuddy-connect` 等其它 WorkBuddy 桥插件相同。
+  **同时装两个会撞 id，后注册的那个静默不激活**（不报错，只是模型列表里没有它）——装之前先卸掉别的桥
 - 首次安装时 pnpm 会要求批准 `@google/genai` / `protobufjs` 的安装脚本（均为空操作或仅打印警告），
   批准一次即可，说明见上文「安装」节
 - 本仓库只发预构建产物 `lib/`，没有可重建的源码树——`lib/` 就是唯一实现来源

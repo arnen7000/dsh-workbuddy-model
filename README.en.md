@@ -135,6 +135,7 @@ What can still bite you there:
 ## Known limitations
 
 - This works by posing as the official WorkBuddy client; the upstream runs channel checks and may break it again at any time
+- Registers the provider ids `workbuddy` / `workbuddy-ai`, the same ones other WorkBuddy bridges such as `dsh-workbuddy-connect` use. **Installing two of them collides on the id and the later one silently fails to activate** (no error, it just never shows up in the model list) — uninstall the other bridge first
 - The first install asks pnpm to approve the install scripts of `@google/genai` / `protobufjs` (both no-ops or warning-only); approve once — see the **Install** section above
 - This repository ships the prebuilt `lib/` only — there is no source tree to rebuild, `lib/` is the single source of truth
 
